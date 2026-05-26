@@ -454,3 +454,43 @@ The container is designed to deploy to AWS App Runner, Render, or any container 
 - Portfolio visualization: heatmap renders with correct colors, P&L chart has data points
 - AI chat (mocked): send a message, receive a response, trade execution appears inline
 - SSE resilience: disconnect and verify reconnection
+
+---
+
+## 13. Review Questions, Clarifications, and Simplification Opportunities
+
+### Questions and Clarifications
+
+- **First-launch requirements vs. required LLM key**: Section 2 says the user can run one command and immediately use the app, while Section 5 marks `OPENROUTER_API_KEY` as required. Should first launch work fully in simulator plus `LLM_MOCK=true` mode when no key is present, or should the chat panel show a configured-but-unavailable state until the key is provided?
+- **Market hours and stale data behavior**: For Massive-backed data, should the UI distinguish live intraday ticks from delayed, after-hours, weekend, or stale quotes? This affects the connection indicator, user trust, and whether trades fill at a cached price.
+- **Trade validation rules**: The plan specifies sufficient cash and sufficient shares, but it would help to define minimum quantity, decimal precision for fractional shares, ticker normalization, whether short selling is forbidden, and whether a sell that reduces a position to near-zero should close the row.
+- **Portfolio value calculation**: Clarify whether `total_value` is cash plus positions marked to the latest cache price, and what happens when a position has no current price yet.
+- **Daily change percent source**: The watchlist asks for daily change %, but the simulator only describes latest and previous price. Should the simulator maintain an opening/reference price per ticker, or should the frontend compute session change since page load?
+- **Chart data retention**: Sparklines are accumulated in the frontend since page load, while the main chart and P&L chart need historical points. Clarify whether the backend stores ticker price history, whether charts reset on refresh, and how many points the client should retain.
+- **SSE payload shape**: The endpoint table names `/api/stream/prices`, but the event contract is prose-only. A concrete JSON example would prevent frontend/backend mismatch, especially for batched vs. one-event-per-ticker updates.
+- **Watchlist and stream scope**: The market data section says SSE pushes all tickers known to the system and that this is equivalent to the user's watchlist in single-user mode. Clarify whether removing a ticker stops streaming it immediately and whether held-but-unwatched positions should continue receiving prices.
+- **LLM auto-execution safety**: Auto-execution is good for the demo, but agents need a clear rule for ambiguous user intent. Should the LLM execute only when the user directly asks for action, or may it proactively trade when it believes doing so is helpful?
+- **Structured output failure handling**: Define the fallback when LiteLLM/OpenRouter returns invalid JSON, partial schema fields, provider errors, or a timeout. Should the assistant message be saved when no action executes?
+- **Database initialization timing**: Section 7 says startup or first request. Pick one preferred behavior so tests and health checks can assert it consistently.
+- **Static export compatibility**: If using Next.js static export, avoid features that require a Node server. The frontend plan should explicitly rule out server components, route handlers, server actions, and runtime image optimization.
+- **Start scripts and browser opening**: The first-launch section says a browser opens, while scripts say optionally opens the browser. Clarify whether browser auto-open is required by default or controlled by a flag.
+- **Testing environment API keys**: E2E tests use `LLM_MOCK=true`, but Massive should probably be disabled in tests as well. Clarify expected `.env.test` or test compose defaults.
+
+### Feedback
+
+- **The product vision is strong and demo-friendly**: The spec has a clear center of gravity: fast setup, live-feeling market data, simulated trading, and an AI assistant that can act. That is a good capstone shape.
+- **The architecture is appropriately simple for single-user local use**: FastAPI plus static Next.js plus SQLite is a coherent choice. The main risk is letting future multi-user hints leak too much complexity into the first implementation.
+- **The plan should define a small shared API contract file early**: A single `planning/API_CONTRACT.md` or OpenAPI-first backend route definition would reduce coordination cost between agents.
+- **LLM behavior needs the tightest contract**: Because the assistant can execute trades, the prompt, schema validation, action validation, and audit trail should be treated as one backend-owned workflow rather than spread across chat and portfolio code.
+- **The visual target is clear, but component priority would help**: The frontend list is broad. Marking watchlist, trade bar, positions, portfolio total, and chat as MVP before heatmap polish would help agents sequence work.
+
+### Opportunities to Simplify
+
+- **Make simulator-only the default MVP path**: Build and test the full app with simulated prices first. Treat Massive as a swappable provider after the core UI, portfolio math, and SSE loop are stable.
+- **Use one price stream format everywhere**: Prefer batched SSE events like `{ "prices": [...] }` at a fixed cadence. This is easier for the frontend to reconcile and avoids many tiny events.
+- **Defer ticker price history persistence**: Keep ticker chart history in memory or frontend state for the first version. Persist only portfolio snapshots, since those are already needed for the P&L chart.
+- **Collapse user identity to a constant in backend helpers**: Keep `user_id` columns for future migration, but route all MVP code through one `DEFAULT_USER_ID` helper to avoid fake multi-user plumbing.
+- **Start with one charting library**: Use the same library for sparklines, main chart, and P&L where practical. Mixing libraries early will slow styling and testing.
+- **Make heatmap a second-pass visualization**: Positions table plus P&L chart prove the portfolio logic. The heatmap can be added once position data and live marks are reliable.
+- **Mock LLM by default when no API key exists**: This preserves the one-command first-launch experience and makes the app feel complete even in classrooms or offline development.
+- **Avoid docker-compose for the core path**: Keep `docker-compose.yml` as convenience, but make the documented golden path a single `docker build` plus `docker run` or one wrapper script.

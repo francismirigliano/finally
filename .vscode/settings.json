@@ -1,0 +1,14 @@
+{
+    "airun.settings": {
+        "workspaceId": "53f9cb83-d799-463c-82e8-c4d8d902666f"
+    },
+    "claudeCode.environmentVariables": [
+        {
+            "name": "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS",
+            "value": "1"
+        }
+    ],
+    "claudeCode.disableLoginPrompt": false,
+    "eliteacode.LLMAuthToken": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiNjZhZDEyOTItYThlNS00NjJjLWI1NTYtNzBkNTI0YzY2NzVkIiwiZXhwaXJlcyI6IjIwMjYtMDYtMDRUMTc6MDgifQ.1gTwbFLeNkbe0AoOtc809Tr74LQdlzglrIFzz-5psBDhA-UKdjcnHtPpTIr01i6LgQzByaE0E54l2mtA16IKbA",
+    "eliteacode.LLMServerUrl": ""
+}
